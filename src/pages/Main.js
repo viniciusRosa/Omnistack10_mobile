@@ -4,8 +4,11 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import { getCurrentPositionAsync, requestPermissionsAsync } from 'expo-location';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import api from '../sevices/api';
+
 function Main({ navigation }) {
 
+	const [devs, setDevs] = useState([]);
 	const [currentRegion, setCurrentRegion] = useState(null);
 	useEffect(() => {
 		async function loadInitialLocation() {
@@ -31,41 +34,69 @@ function Main({ navigation }) {
 		loadInitialLocation();
 	}, []);
 
+
+	async function loadDevs() {
+		const { latitude, longitude } = currentRegion;
+
+		const response = await api.get('search', {
+			params: {
+				latitude,
+				longitude,
+				techs: 'ReactJs'
+			}
+		});
+
+		setDevs(response.data);
+	}
+
+	function handleRegionChanged(region){
+		setCurrentRegion(region)
+	}
+
 	if (!currentRegion) {
 		return null;
 	}
 
 	return (
-	<>
-	<MapView initialRegion={currentRegion} style={styles.map} >
-		<Marker coordinate={{ latitude: -29.891507,longitude: -50.2577158 }}>
-			<Image style={styles.avatar} source={{ uri: 'https://avatars3.githubusercontent.com/u/7891544?s=460&v=4'}} />
-			<Callout onPress={ () => {
-				navigation.navigate('Profile', { github_username: 'viniciusrosa' });
-			} }>
-				<View style={styles.callout} >
-					<Text style={styles.devName}>Vinicius rosa</Text>
-					<Text style={styles.devBio}>Biografia</Text>
-					<Text style={styles.devTechs}>tecnologias</Text>
-				</View>
-			</Callout>
-		</Marker>
-	</MapView>
-	<View style={styles.searchForm}>
-		<TextInput 
-			style={styles.searchInput} 
-			placeholder='Buscar devs'
-			placeholderTextColor='#999'
-			autoCapitalize='words'
-			autoCorrect={false}
+		<>
+			<MapView 
+				onRegionChangeComplete={handleRegionChanged} 
+				initialRegion={currentRegion} style={styles.map} 
+				>
+				{devs.map(dev => (
+					<Marker coordinate={{ 
+						latitude: dev.location.coordinates[1], 
+						longitude: dev.location.coordinates[0] }}>
+					<Image style={styles.avatar} source={{ uri: 'https://avatars3.githubusercontent.com/u/7891544?s=460&v=4' }} />
+					<Callout onPress={() => {
+						navigation.navigate('Profile', { github_username: 'viniciusrosa' });
+					}}>
+						<View style={styles.callout} >
+							<Text style={styles.devName}>Vinicius rosa</Text>
+							<Text style={styles.devBio}>Biografia</Text>
+							<Text style={styles.devTechs}>tecnologias</Text>
+						</View>
+					</Callout>
+				</Marker>
+				))}
+				
+			</MapView>
+			<View style={styles.searchForm}>
+				<TextInput
+					style={styles.searchInput}
+					placeholder='Buscar devs'
+					placeholderTextColor='#999'
+					autoCapitalize='words'
+					autoCorrect={false}
 
-			/>
-		<TouchableOpacity onPress={() => {}} style={styles.loadButton}>
-			<MaterialIcons name="my-location" size={20} color={"#fff"}/>
-		</TouchableOpacity>
-	</View>
-	</>
-	)}
+				/>
+				<TouchableOpacity onPress={loadDevs} style={styles.loadButton}>
+					<MaterialIcons name="my-location" size={20} color={"#fff"} />
+				</TouchableOpacity>
+			</View>
+		</>
+	)
+}
 
 const styles = StyleSheet.create({
 	map: {
@@ -94,7 +125,7 @@ const styles = StyleSheet.create({
 	},
 	searchForm: {
 		position: 'absolute',
-		bottom: 20,
+		top: 20,
 		left: 20,
 		right: 20,
 		zIndex: 5,
