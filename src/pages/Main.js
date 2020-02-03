@@ -5,6 +5,7 @@ import { getCurrentPositionAsync, requestPermissionsAsync } from 'expo-location'
 import { MaterialIcons } from '@expo/vector-icons';
 
 import api from '../sevices/api';
+import { connect, disconnect } from '../sevices/socket';
 
 function Main({ navigation }) {
 
@@ -35,6 +36,9 @@ function Main({ navigation }) {
 		loadInitialLocation();
 	}, []);
 
+	function setupWebSocket() {
+		connect();
+	}
 
 	async function loadDevs() {
 		const { latitude, longitude } = currentRegion;
@@ -48,9 +52,10 @@ function Main({ navigation }) {
 		});
 
 		setDevs(response.data.devs);
+		setupWebSocket();
 	}
 
-	function handleRegionChanged(region){
+	function handleRegionChanged(region) {
 		setCurrentRegion(region)
 	}
 
@@ -60,28 +65,29 @@ function Main({ navigation }) {
 
 	return (
 		<>
-			<MapView 
-				onRegionChangeComplete={handleRegionChanged} 
-				initialRegion={currentRegion} style={styles.map} 
-				>
+			<MapView
+				onRegionChangeComplete={handleRegionChanged}
+				initialRegion={currentRegion} style={styles.map}
+			>
 				{devs.map(dev => (
-					<Marker key={dev._id} 
-					coordinate={{ 
-						latitude: dev.location.coordinates[1], 
-						longitude: dev.location.coordinates[0] }}>
-					<Image style={styles.avatar} source={{ uri: dev.avatar_url }} />
-					<Callout onPress={() => {
-						navigation.navigate('Profile', { github_username: dev.github_username });
-					}}>
-						<View style={styles.callout} >
-							<Text style={styles.devName}>{dev.name}</Text>
-							<Text style={styles.devBio}>{dev.bio}</Text>
-							<Text style={styles.devTechs}>{dev.techs.join(',' )}</Text>
-						</View>
-					</Callout>
-				</Marker>
+					<Marker key={dev._id}
+						coordinate={{
+							latitude: dev.location.coordinates[1],
+							longitude: dev.location.coordinates[0]
+						}}>
+						<Image style={styles.avatar} source={{ uri: dev.avatar_url }} />
+						<Callout onPress={() => {
+							navigation.navigate('Profile', { github_username: dev.github_username });
+						}}>
+							<View style={styles.callout} >
+								<Text style={styles.devName}>{dev.name}</Text>
+								<Text style={styles.devBio}>{dev.bio}</Text>
+								<Text style={styles.devTechs}>{dev.techs.join(',')}</Text>
+							</View>
+						</Callout>
+					</Marker>
 				))}
-				
+
 			</MapView>
 			<View style={styles.searchForm}>
 				<TextInput
